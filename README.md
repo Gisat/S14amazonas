@@ -1,4 +1,4 @@
-# s14amazonas
+# S14amazonas
 ![alt text](https://raw.githubusercontent.com/gisat/s14amazonas/master/amazonas_workflow.jpg)
 Script repositorty for ESA s14amazonas project.
 
