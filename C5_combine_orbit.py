@@ -1,5 +1,5 @@
 from pathlib import Path
-import os, requests
+import os, requests, shutil
 import subprocess
 import geopandas as gpd
 import json
@@ -14,7 +14,11 @@ from src.tondor.util.tool import reproject_multibandraster_toextent
 THR_SRTM_elevation_mountains = 1800
 THR_SRTM_elevation = 40
 
-
+def raster2array(rasterfn):
+    raster = gdal.Open(str(rasterfn))
+    band = raster.GetRasterBand(1).ReadAsArray().astype('float')
+    band[np.isnan(band)] = np.nan
+    return band
 
 def create_merged_filepath(output_path, raster1, raster2, bounds, pixel_width, width, height):
     output_inter_path = output_path.parent.joinpath(output_path.name.replace(".tif", "_inter.tif"))
@@ -109,7 +113,9 @@ def create_filtered_detection(file1_path, file1_path_sieved, file1_filtered_path
 
 
 #'18LVQ', '18LVR', '18LWR', '18NXG', '18NXH', '18NYH', '20LLP','18LVR', '20LLQ',
-tiles = [ '18LVQ', '18LVR', '18LWR', '18NXG', '18NXH', '18NYH', '20LLP','18LVR', '20LLQ', '20LMP', '20LMQ', '20NQF', '20NQG', '20NRG', '21LYG', '21LYH', '22MBT', '22MGB']
+# '18LVQ', '18LVR', '18LWR', '18NXG', '18NXH', '18NYH', '20LLP','18LVR', '20LLQ',
+tiles = ['18LVQ', '18LVR', '18LWR', '18NXG', '18NXH', '18NYH', '20LLP', '20LLQ', '20LMP', '20LMQ', '20NQF', '20NQG',
+             '20NRG', '21LYG', '21LYH', '22MBT', '22MGB']
 # '20LMP', '20LMQ', '20NQF', '20NQG', '20NRG', '21LYH', '22MBT', '22MGB']
 print(len(tiles))
 
@@ -139,67 +145,26 @@ os.makedirs(deforesation_mask_folder, exist_ok=True)
 
 for tile_item in tiles:
     detection_folder_aiversion = detection_folder_aiversion_parent.joinpath(tile_item)
-    detection_folder_aiversion_reclassified = detection_folder_aiversion.joinpath("reclassified")
-    os.makedirs(detection_folder_aiversion_reclassified, exist_ok=True)
+    detection_folder_aiversion_reclassified = detection_folder_aiversion.joinpath("zscore_checked_filtered")
+    detection_folder_aiversion_combined = detection_folder_aiversion.joinpath("zscore_checked_filtered_combined")
+    os.makedirs(detection_folder_aiversion_combined, exist_ok=True)
     # / mnt / hddarchive.nfs / amazonas_dir / support_data / base_worldcover_prediction / 18L
     # VQ_BASELC_2017_CLASS.tif
 
+    tile_deforestation_mask = deforesation_mask_folder.joinpath(f"master_classsum_mask_{tile_item}.tif")
+    tile_mask_array = raster2array(tile_deforestation_mask)
+    base_deforestation = (1 - tile_mask_array)
+
+
     template_raster = None
-    orbit_directions = os.listdir(detection_folder_aiversion)
-    for orbit_direction_item in sorted(orbit_directions):
-        if not orbit_direction_item in ['ascending', 'descending']: continue
-
-        folder_files_list = os.listdir(detection_folder_aiversion.joinpath(orbit_direction_item))
-        for folder_file_list_item in sorted(folder_files_list):
-            detection_path = detection_folder_aiversion.joinpath(orbit_direction_item, folder_file_list_item)
-            if not "CLASS.tif" in folder_file_list_item: continue
-            template_raster = detection_path
-            if template_raster.exists(): break
-    print(f"using template rasters: {template_raster}")
-
-    if base_version == "mcd":
-        base_lc_tile_filepath = predicted_baselc_folder.joinpath(f"{tile_item}_BASELC_2017_CLASS.tif")
-        if not base_lc_tile_filepath.exists(): raise Exception(f"{base_lc_tile_filepath} does not exist")
-    elif base_version == "jaxa":
-        (xmin, ymax, RasterXSize, RasterYSize, pixel_width, projection, epsg, datatype, n_bands, imagery_extent_box) = read_raster_info(template_raster)
-        jaxa_mosaic = "/mnt/hddarchive.nfs/amazonas_dir/support_data/jaxa_worldcover/reclassified/mosaic.tif"
-        baselc_folder = support_data.joinpath(f"base_jaxa_worldcover")
-        os.makedirs(baselc_folder, exist_ok=True)
-        base_lc_tile_filepath = baselc_folder.joinpath(f"{tile_item}_MASK.tif")
-        if not base_lc_tile_filepath.exists():
-            reproject_multibandraster_toextent(jaxa_mosaic, base_lc_tile_filepath, epsg, pixel_width, xmin, imagery_extent_box.bounds[2], imagery_extent_box.bounds[1], ymax, work_dir= None, method ='near')
-    else:
-        base_lc_tile_filepath = baselc_folder.joinpath(f"{tile_item}_MASK.tif")
-        if not base_lc_tile_filepath.exists(): raise Exception(f"{base_lc_tile_filepath} does not exist")
+    orbit_directions = []
+    folder_files = os.listdir(detection_folder_aiversion_reclassified)
+    for orbit_direction_item in sorted(folder_files):
+        if  orbit_direction_item in ['ascending', 'descending']:
+            orbit_directions.append(orbit_direction_item)
 
 
-    tile_prob_mask = prob_var_mask_folder.joinpath(f"prob_{tile_item}_mask_{var_threshold_name_suffix}.tif")
-    if not tile_prob_mask.exists(): raise Exception(f"{tile_prob_mask} doesnt exists")
-
-    tile_prob_mask_reprojected = prob_var_mask_folder.joinpath(f"prob_{tile_item}_mask_{var_threshold_name_suffix}_reprojected.tif")
-    reproject_multibandraster_toextent(tile_prob_mask, tile_prob_mask_reprojected, epsg, pixel_width, xmin,
-                                       imagery_extent_box.bounds[2], imagery_extent_box.bounds[1], ymax, work_dir=None,
-                                       method='near')
-
-    tile_deforestation_mask = deforesation_mask_folder.joinpath(f"mask_{tile_item}.tif")
-
-    tile_srtm_path = srtm_mask_folder.joinpath(f"srtm_{tile_item}.tif")
-
-    create_mask(tile_deforestation_mask, base_lc_tile_filepath, tile_prob_mask_reprojected)
-
-    tile_deforestation_master_mask = deforesation_mask_folder.joinpath(f"master_mask_{tile_item}.tif")
-    create_srtm_jaxa_prob_mask(tile_deforestation_master_mask, tile_deforestation_mask, tile_srtm_path)
-
-    continue
-    (xmin, ymax, RasterXSize, RasterYSize, pixel_width, projection, epsg, datatype, n_bands, imagery_extent_box) = read_raster_info(base_lc_tile_filepath)
-
-    dataset = gdal.Open(str(tile_deforestation_mask))
-    base_lc = dataset.GetRasterBand(1).ReadAsArray()
-    base_deforestation = 1 - base_lc
-
-    orbit_directions = os.listdir(detection_folder_aiversion)
-    if len(orbit_directions) == 3:
-
+    if len(orbit_directions) > 1:
         reclassified_orbit_files_dict = {}
 
         for orbit_direction_item in sorted(orbit_directions):
@@ -208,12 +173,12 @@ for tile_item in tiles:
 
             reclassified_orbit_files_dict[orbit_direction_item] = {}
 
-            detection_folder_aiversion_orbit = detection_folder_aiversion.joinpath(
+            detection_folder_aiversion_orbit = detection_folder_aiversion.joinpath("zscore_checked_filtered",
                 orbit_direction_item)
             folder_files_list = os.listdir(detection_folder_aiversion_orbit)
 
             for folder_file_list_item in sorted(folder_files_list):
-                if not folder_file_list_item.endswith("_CLASS.tif"): continue
+                if not folder_file_list_item.endswith("sieved.tif"): continue
                 timepoint = folder_file_list_item.split('_')[2]
                 reclassified_orbit_files_dict[orbit_direction_item][timepoint] = detection_folder_aiversion_orbit.joinpath(folder_file_list_item)
                 pass
@@ -227,47 +192,14 @@ for tile_item in tiles:
 
         raster_template = None
         # Iterate through the matched tuples
-        for f1, f2 in matched_tuples:
-            if f1 is not None:
-                file1_path = f1
-                file1_path_sieved = work_dir.joinpath(f"{Path(file1_path).stem}_sieved.tif")
-                file1_filtered_path = work_dir.joinpath(f"{Path(file1_path).stem}_filtered.tif")
-                file1_path_sieved.unlink(missing_ok=True)
-                file1_filtered_path.unlink(missing_ok=True)
-
-
-                create_large_sieved(file1_path, file1_path_sieved)
-                create_filtered_detection(file1_path, file1_path_sieved, file1_filtered_path)
-                raster_template = file1_filtered_path
-                time_point = file1_filtered_path.name.split('_')[2]
-                file1_path = file1_filtered_path
-            else:
-                file1_path = None
-
-            if f2 is not None:
-                file2_path = f2
-                file2_path_sieved = work_dir.joinpath(f"{Path(file2_path).stem}_sieved.tif")
-                file2_filtered_path = work_dir.joinpath(f"{Path(file2_path).stem}_filtered.tif")
-                file2_path_sieved.unlink(missing_ok=True)
-                file2_filtered_path.unlink(missing_ok=True)
-
-
-                create_large_sieved(file2_path, file2_path_sieved)
-                create_filtered_detection(file2_path, file2_path_sieved, file2_filtered_path)
-                raster_template = file2_path
-                time_point = file2_filtered_path.name.split('_')[2]
-                file2_path = file2_filtered_path
-            else:
-                file2_path = None
-
-
-
-
+        for file1_path, file2_path in matched_tuples:
 
             # Open the first file and read as an array (if present)
             if file1_path is not None:
                 dataset1 = gdal.Open(str(file1_path))
                 dataset1_array = dataset1.GetRasterBand(1).ReadAsArray()
+                raster_template = file1_path
+                time_point = file1_path.name.split('_')[2]
             else:
                 dataset1_array = None
 
@@ -275,6 +207,8 @@ for tile_item in tiles:
             if file2_path is not None:
                 dataset2 = gdal.Open(str(file2_path))
                 dataset2_array = dataset2.GetRasterBand(1).ReadAsArray()
+                raster_template = file2_path
+                time_point = file2_path.name.split('_')[2]
             else:
                 dataset2_array = None
 
@@ -288,55 +222,37 @@ for tile_item in tiles:
             else:
                 combined_array = None  # Both arrays are None
 
+
             detected_change_baselc_removed = (combined_array.astype(np.int32)) & (~base_deforestation.astype(np.int32))
             base_deforestation = base_deforestation + detected_change_baselc_removed
 
-            detection_folder_aiversion_reclassified_path = detection_folder_aiversion_reclassified.joinpath(f"{tile_item}_{time_point}_CLASS.tif")
+            detection_folder_aiversion_reclassified_path = detection_folder_aiversion_combined.joinpath(f"{tile_item}_{time_point}_CLASS.tif")
             save_raster_template(raster_template, detection_folder_aiversion_reclassified_path, detected_change_baselc_removed, data_type=GDT_Byte)
             print(detection_folder_aiversion_reclassified_path)
-
-
-
-
-
     else:
 
         for orbit_direction_item in sorted(orbit_directions):
 
             if not orbit_direction_item in ['ascending', 'descending']: continue
 
-
-            detection_folder_aiversion_orbit = detection_folder_aiversion.joinpath(
+            detection_folder_aiversion_orbit = detection_folder_aiversion.joinpath("zscore_checked_filtered",
                 orbit_direction_item)
             folder_files_list = os.listdir(detection_folder_aiversion_orbit)
 
             for folder_file_list_item in sorted(folder_files_list):
-                if not folder_file_list_item.endswith("_CLASS.tif"): continue
-                raster_filepath = detection_folder_aiversion_orbit.joinpath(folder_file_list_item)
-                time_point = folder_file_list_item.split('_')[2]
+                if not folder_file_list_item.endswith("sieved.tif"): continue
+                timepoint = folder_file_list_item.split('_')[2]
 
-
-
-                file1_path_sieved = work_dir.joinpath(f"{Path(raster_filepath).stem}_sieved.tif")
-                file1_filtered_path = work_dir.joinpath(f"{Path(raster_filepath).stem}_filtered.tif")
-                file1_path_sieved.unlink(missing_ok=True)
-                file1_filtered_path.unlink(missing_ok=True)
-
-                create_large_sieved(raster_filepath, file1_path_sieved)
-                create_filtered_detection(raster_filepath, file1_path_sieved, file1_filtered_path)
-
-
-                dataset2 = gdal.Open(str(file1_filtered_path))
+                file1_path = detection_folder_aiversion_orbit.joinpath(folder_file_list_item)
+                dataset2 = gdal.Open(str(file1_path))
                 combined_array = dataset2.GetRasterBand(1).ReadAsArray()
 
-
-                detected_change_baselc_removed = (combined_array.astype(np.int32)) & (~base_deforestation.astype(np.int32))
+                detected_change_baselc_removed = (combined_array.astype(np.int32)) & (
+                    ~base_deforestation.astype(np.int32))
                 base_deforestation = base_deforestation + detected_change_baselc_removed
 
-                detection_folder_aiversion_reclassified_path = detection_folder_aiversion_reclassified.joinpath(f"{tile_item}_{time_point}_CLASS.tif")
-                save_raster_template(str(raster_filepath), detection_folder_aiversion_reclassified_path, detected_change_baselc_removed, data_type=GDT_Byte)
-                print(detection_folder_aiversion_reclassified_path)
-
-
-
+                detection_folder_aiversion_reclassified_path = detection_folder_aiversion_combined.joinpath(
+                    f"{tile_item}_{timepoint}_CLASS.tif")
+                save_raster_template(file1_path, detection_folder_aiversion_reclassified_path,
+                                     detected_change_baselc_removed, data_type=GDT_Byte)
 

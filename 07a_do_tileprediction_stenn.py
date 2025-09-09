@@ -4,12 +4,12 @@ import subprocess
 import geopandas as gpd
 import json
 from osgeo import gdal
-from osgeo.gdalconst import GDT_Byte, GDT_Float32
+from gdalconst import GDT_Byte, GDT_Float32
 import numpy as np
 from datetime import datetime, timedelta, date
 import math
 from tondortools.tool import read_raster_info, save_raster, mosaic_tifs, save_raster_template
-# import tensorflow as tf
+import tensorflow as tf
 
 import multiprocessing
 from multiprocessing import Pool
@@ -26,7 +26,7 @@ time_window = 60
 block_size = 256
 inner_buffer = 32
 cutoff_prob = 0.1
-model_version = 'best_build_vgg16_segmentation_batchingestion_labelmorethan120dataset_weighted_f1score'
+model_version = 'best_build_stenn_segmentation_batchingestion_smalldataset_weighted_f1score_morelayers'
 amazonas_root_folder = Path("/mnt/hddarchive.nfs/amazonas_dir")
 
 number_of_files = int(np.floor(time_window/acq_freq))
@@ -60,10 +60,10 @@ def create_window(raster_list, xoff, yoff, x_window_size, y_window_size):
 
 def process_window(chunk, loaded_model):
     stacked_data = np.transpose(chunk, (1, 2, 0, 3)).reshape(256, 256, 15)
-    reshaped_data = np.expand_dims(stacked_data, axis=0)
+    reshaped_data = np.expand_dims(chunk, axis=0)
     result = loaded_model.predict(reshaped_data)
     result = result[0]
-    return np.squeeze(result)
+    return np.squeeze(result[:, :, 0])
 
 
 def do_prediction(input_data):
@@ -202,11 +202,11 @@ for tile_item in tiles:
     output_folder_multiband_mosaic_from_2020_tile = output_folder_multiband_mosaic_from_2020.joinpath(tile_item)
 
     mosaic_filepaths = []
-    orbit_directions = os.listdir(output_folder_multiband_mosaic_from_2020_tile)
+    orbit_directions = os.listdir(output_folder_multiband_mosaic_tile)
     for orbit_direction_item in orbit_directions:
         if orbit_direction_item not in ['ascending', 'descending']:continue
 
-        output_folder_multiband_mosaic_tile_orbit = output_folder_multiband_mosaic_from_2020_tile.joinpath(orbit_direction_item)
+        output_folder_multiband_mosaic_tile_orbit = output_folder_multiband_mosaic_tile.joinpath(orbit_direction_item)
         mosaic_files = os.listdir(output_folder_multiband_mosaic_tile_orbit)
         for mosaic_file_item in sorted(mosaic_files):
             mosaic_filepaths.append(Path(output_folder_multiband_mosaic_tile_orbit).joinpath(mosaic_file_item))

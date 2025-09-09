@@ -11,9 +11,7 @@ import math
 from tondortools.tool import read_raster_info, save_raster, mosaic_tifs, save_raster_template
 import tensorflow as tf
 
-
 tiles = ['18LVQ', '18LVR', '18LWR', '18NXG', '18NXH', '18NYH', '20LLP', '20LLQ', '20LMP', '20LMQ', '20NQF', '20NQG', '20NRG', '21LYG', '21LYH', '22MBT', '22MGB']
-
 cutoff_prob = 0.2
 model_version = 'best_build_vgg16_segmentation_batchingestion_labelmorethan120dataset_weighted_f1score'
 amazonas_root_folder = Path("/mnt/hddarchive.nfs/amazonas_dir")

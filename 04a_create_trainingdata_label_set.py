@@ -40,8 +40,8 @@ num_samples = len(data_files)
 with h5py.File(output_hdf5_file, 'w') as h5f:
     # Create datasets for data and labels
     # Adjust dtype and maxshape as necessary
-    data_set = h5f.create_dataset("data", shape=(num_samples,) + sample_data_shape, dtype=np.uint16)
-    label_set = h5f.create_dataset("label", shape=(num_samples,) + sample_label_shape, dtype=np.uint16)
+    data_set = h5f.create_dataset("data", shape=(num_samples,) + sample_data_shape, dtype=np.float32)
+    label_set = h5f.create_dataset("label", shape=(num_samples,) + sample_label_shape, dtype=np.float32)
 
     # Iterate and store each npy file into the datasets
     for i in range(num_samples):
@@ -57,4 +57,7 @@ with h5py.File(output_hdf5_file, 'w') as h5f:
             label_set[i, ...] = label
         else:
             print(f"couldnt find {i}")
+
+        if i % 1000 == 0:
+            print(f"{i} -- count --")
 print("Data and labels have been successfully saved to HDF5.")

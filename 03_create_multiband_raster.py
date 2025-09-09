@@ -9,7 +9,7 @@ from pathlib import Path
 import numpy as np
 from multiprocessing import Pool
 MIN_VALUE = 0
-MAX_VALUE = 65535
+MAX_VALUE = 1
 
 def cutoff_minmax_scale(numpy_array):
     lower_cutoff = -30
@@ -55,7 +55,7 @@ def do_merging(input_data):
 
         # Process each group
         for date, files in file_groups.items():
-            if not str(date).startswith('2017'): continue
+            if not str(date).startswith('2019'): continue
             if "VV" in files and "VH" in files:
                 vh_file = files["VH"]
                 vv_file = files["VV"]
@@ -84,7 +84,7 @@ def do_merging(input_data):
 
                 three_band_array = np.stack((vh_band_scaled, vv_band_scaled, diff_scaled))
                 three_band_array = three_band_array
-                save_raster_template(vh_file, merged_file_local_path, three_band_array, GDT_UInt16, 0)
+                save_raster_template(vh_file, merged_file_local_path, three_band_array, GDT_Float32, 0)
                 shutil.copy(merged_file_local_path, merged_file_archive_path)
                 shutil.rmtree(work_dir_file)
                 print(f"{tile_item} -- {work_dir_file.name}")

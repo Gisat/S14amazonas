@@ -44,7 +44,6 @@ def create_sieved(result_filepath_for_sieve, result_filepath_sieved, sieve=10):
     intermediate_path.unlink()
 
 tiles = ['18LVQ', '18LVR', '18LWR', '18NXG', '18NXH', '18NYH', '20LLP', '20LLQ', '20LMP', '20LMQ', '20NQF', '20NQG', '20NRG', '21LYG', '21LYH', '22MBT', '22MGB']
-
 tile_srtm_csvpath = "/mnt/hddarchive.nfs/amazonas_dir/aux_data/geom_data/S2_grid_AmazonBasin_detections_thresholds.csv"
 model_version = 'best_build_vgg16_segmentation_batchingestion_labelmorethan120dataset_weighted_f1score'
 amazonas_root_folder = Path("/mnt/hddarchive.nfs/amazonas_dir")
@@ -74,6 +73,7 @@ for tile_item in tiles:
     detection_folder_aiversion_reclassified = detection_folder_aiversion_parent.joinpath(tile_item, "reclassified")
     detection_folder_aiversion_sieved_tile = detection_folder_aiversion_parent.joinpath("deforestation",
                                                                                         tile_item)
+    os.makedirs(detection_folder_aiversion_sieved_tile, exist_ok=True)
 
     template_raster = None
     reclassified_tifs = os.listdir(detection_folder_aiversion_reclassified)

@@ -5,7 +5,7 @@ from osgeo import gdal, gdal_array
 
 def get_raster_files_by_year(folder_path, tile_name, year):
     # Create a pattern to match files for the given year
-    pattern = os.path.join(folder_path, f'*array_{year}*.tif')
+    pattern = os.path.join(folder_path, f'{tile_name}_{year}*.tif')
     # Use glob to get all matching files
     return glob.glob(pattern)
 
@@ -28,13 +28,13 @@ def sum_rasters(raster_files):
         band = raster.GetRasterBand(1)
         array = band.ReadAsArray()
         sum_array += array
-    sum_array[sum_array>1] = 1
+
     return sum_array, geotransform, projection
 
 def save_raster(output_path, array, geotransform, projection):
     driver = gdal.GetDriverByName('GTiff')
     y_size, x_size = array.shape
-    dataset = driver.Create(output_path, x_size, y_size, 1, gdal.GDT_Float32)
+    dataset = driver.Create(output_path, x_size, y_size, 1, gdal.GDT_Byte)
     dataset.SetGeoTransform(geotransform)
     dataset.SetProjection(projection)
     dataset.GetRasterBand(1).WriteArray(array)
@@ -55,7 +55,7 @@ def sum_all(folder_path, tile_name, year_list, output_path):
     for year in year_list:
         raster_files = get_raster_files_by_year(folder_path,tile_name, year)
         raster_files_master.extend(raster_files)
-    if not raster_files_master:
+    if not raster_files:
         print(f"No raster files found for the year {year}")
         return
 
@@ -66,18 +66,18 @@ def sum_all(folder_path, tile_name, year_list, output_path):
 if __name__ == "__main__":
     tiles = ['18LVQ', '18LVR', '18LWR', '18NXG', '18NXH', '18NYH', '20LLP', '20LLQ', '20LMP', '20LMQ', '20NQF', '20NQG',
              '20NRG', '21LYG', '21LYH', '22MBT', '22MGB']
+
     model = "best_build_vgg16_segmentation_batchingestion_labelmorethan120dataset_weighted_f1score"
     years = ['2019','2020','2021']
 
 
     for tile_item in tiles:
-        folder_path = f'/mnt/hddarchive.nfs/amazonas_dir/output/mcd_detection'
-        folder_path_tile = f'{folder_path}/{tile_item}'
+        folder_path = f'/mnt/hddarchive.nfs/amazonas_dir/output/ai_detection/{model}/{tile_item}/zscore_checked_filtered_combined'
         for year in years:
 
-            output_path = f"/mnt/hddarchive.nfs/amazonas_dir/output/mcd_detection_yearly/{tile_item}_{year}.tif"
-            # main(folder_path_tile, tile_item, year, output_path)
+            output_path = f'/mnt/hddarchive.nfs/amazonas_dir/output/ai_detection/{model}/{tile_item}/zscore_{tile_item}_{year}.tif'
+            main(folder_path, tile_item, year, output_path)
 
-        output_path = f"/mnt/hddarchive.nfs/amazonas_dir/output/mcd_detection_yearly/{tile_item}_all.tif"
-        sum_all(folder_path_tile, tile_item, years, output_path)
+        output_path = f'/mnt/hddarchive.nfs/amazonas_dir/output/ai_detection/{model}/{tile_item}/zscore_{tile_item}_all.tif'
+        sum_all(folder_path, tile_item, years, output_path)
 

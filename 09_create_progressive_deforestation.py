@@ -75,7 +75,7 @@ merged_sar_ref_folder = support_data.joinpath(f"ref_worldcover_sarmosaic")
 predicted_baselc_folder = support_data.joinpath(f"base_worldcover_prediction")
 baselc_folder = support_data.joinpath(f"base_worldcover")
 
-prob_var_mask_folder = support_data.joinpath("tile_prob_pixel_info")
+prob_var_mask_folder = support_data.joinpath("tile_prob_pixel_info_training_years")
 var_threshold_name_suffix = "pt01"
 
 deforesation_mask_folder = support_data.joinpath("deforestation_mask")

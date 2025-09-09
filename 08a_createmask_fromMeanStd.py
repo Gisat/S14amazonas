@@ -12,10 +12,10 @@ from tondortools.tool import read_raster_info, mosaic_tifs, save_raster_template
 from osgeo import gdal, gdal_array
 
 
-def save_raster(output_path, array, geotransform, projection):
+def save_raster(output_path, array, geotransform, projection, datatype = gdal.GDT_Float32):
     driver = gdal.GetDriverByName('GTiff')
     y_size, x_size = array.shape
-    dataset = driver.Create(str(output_path), x_size, y_size, 1, gdal.GDT_Float32)
+    dataset = driver.Create(str(output_path), x_size, y_size, 1, datatype)
     dataset.SetGeoTransform(geotransform)
     dataset.SetProjection(projection)
     dataset.GetRasterBand(1).WriteArray(array)
@@ -84,7 +84,6 @@ def std_rasters(raster_files):
     return std_array, variance_array, geotransform, projection
 
 tiles = ['18LVQ', '18LVR', '18LWR', '18NXG', '18NXH', '18NYH', '20LLP', '20LLQ', '20LMP', '20LMQ', '20NQF', '20NQG', '20NRG', '21LYG', '21LYH', '22MBT', '22MGB']
-
 var_cutoff = 0.01
 filename_suffix = "pt01"
 model_version = 'best_build_vgg16_segmentation_batchingestion_labelmorethan120dataset_weighted_f1score'
@@ -102,7 +101,7 @@ os.makedirs(prob_pixel_info, exist_ok=True)
 
 for tile_item in tiles:
 
-    detection_folder_aiversion_tile = detection_folder.joinpath(f'{model_version}', tile_item)
+    detection_folder_aiversion_tile = detection_folder.joinpath(f'{model_version}', 'training_years_prediction', tile_item)
 
     orbit_directions = os.listdir(detection_folder_aiversion_tile)
     for orbit_direction_item in orbit_directions:
@@ -168,7 +167,7 @@ for tile_item in tiles:
             final_binary_array = np.logical_or(final_binary_array, binary_array).astype(np.uint8)
 
     output_mask_path = prob_pixel_info.joinpath(f"prob_{tile_item}_mask_{filename_suffix}.tif")
-    save_raster(output_mask_path, final_binary_array, geotransform, projection)
+    save_raster(output_mask_path, final_binary_array, geotransform, projection, gdal.GDT_Byte)
 
 
 

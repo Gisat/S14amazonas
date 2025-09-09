@@ -1,3 +1,4 @@
+import shutil
 from pathlib import Path
 import os, requests
 import subprocess
@@ -12,7 +13,8 @@ from tondortools.tool import read_raster_info
 import copy
 
 tile_list = ['18LVQ',  '18LVR',  '20LLQ',  '18LWR',  '18NYH',  '18NXH',  '20LLP',  '18NXG',  '20LMP',  '20LMQ',  '20NQG',  '21LYG',  '20NQF',  '20NRG',  '21LYH',  '22MBT',  '22MGB']
-year = [2018, 2019]
+tile_list = ['18LVQ']
+year = [2021, 2023]
 time_window = 60
 acq_freq = 12
 number_bands = 3
@@ -23,7 +25,7 @@ use_mcd = True
 amazonas_root_folder = Path("/mnt/hddarchive.nfs/amazonas_dir")
 ########################################################################################################################
 output_folder = amazonas_root_folder.joinpath('output')
-output_folder_multiband_mosaic = output_folder.joinpath('Multiband_mosaic')
+output_folder_multiband_mosaic = output_folder.joinpath('Multiband_mosaic_from_2020')
 ########################################################################################################################
 work_dir = amazonas_root_folder.joinpath("work_dir")
 support_data = amazonas_root_folder.joinpath("support_data")
@@ -85,16 +87,17 @@ for tile_item in tile_list:
                     if not Path(mosaic_file).name.endswith('.tif'): continue
                     mosaic_date_str = mosaic_file.split('_')[-1].split('.')[0]
                     mosaic_date = datetime.strptime(mosaic_date_str, "%Y%m%d")
-                    if (mosaic_date <= acq_date) and (mosaic_date > acq_date - timedelta(days=time_window)):
+                    if (mosaic_date < acq_date + timedelta(days=time_window)) and (mosaic_date >= acq_date - timedelta(days=time_window)):
                         mosaic_file_list.append(output_folder_multiband_mosaic_tile_orbit.joinpath(mosaic_file))
-                if len(mosaic_file_list) == math.floor(time_window/acq_freq):
+                if len(mosaic_file_list) == math.floor(2*time_window/acq_freq):
                     detection_mosaic_pair[detection_filepath] = {"raster_list":sorted(mosaic_file_list),
                                                                  "tile": tile_item}
-
+        print(f"-- done collecting MCD mosaic set {tile_item}")
     print(f"detection mosaic pair count {len(detection_mosaic_pair)}")
 
 data_list = []
 label_list = []
+
 
 count = 1
 for detection_file, tile_raster_list_dict in detection_mosaic_pair.items():
@@ -115,25 +118,25 @@ for detection_file, tile_raster_list_dict in detection_mosaic_pair.items():
             if x_block + block_size < RasterXSize:
                 cols = block_size
             else:
-                cols = RasterXSize - x_block
-                save_np = False
+                x_block = RasterXSize - block_size
+                save_np = True
 
             if y_block + block_size < RasterYSize:
                 rows = block_size
             else:
-                rows = RasterYSize - y_block
-                save_np = False
+                y_block = RasterYSize - block_size
+                save_np = True
 
             for raster_list_item in raster_list:
                 dataset = gdal.Open(str(raster_list_item))
-                chunk = dataset.ReadAsArray(x_block, y_block, cols, rows)
+                chunk = dataset.ReadAsArray(x_block, y_block, block_size, block_size)
 
                 # Transpose the data
                 transposed_chunk = chunk.transpose(1, 2, 0)
                 chunk_list.append(transposed_chunk)
 
             label_dataset = gdal.Open(str(detection_file))
-            label_chunk = label_dataset.ReadAsArray(x_block, y_block, cols, rows)
+            label_chunk = label_dataset.ReadAsArray(x_block, y_block, block_size, block_size)
             chunk_list_array = np.array(chunk_list)
 
             num_non_zero = np.count_nonzero(label_chunk)
