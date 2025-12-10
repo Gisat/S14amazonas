@@ -15,7 +15,7 @@ import subprocess
 ELEVATION_MAX = 1800
 ELEVATION_MIN = 40
 LARGE_SIEVE = 50000
-AI_DETECTION_THRESHOLD = 200
+AI_DETECTION_THRESHOLD = 2000
 
 forest_tifpath = Path("/mnt/hddarchive.nfs/amazonas_dir/work_dir/forest_elevation_mask/mask/forest_mask_2020.tif")
 elevation_tifpath = Path("/mnt/hddarchive.nfs/amazonas_dir/work_dir/srtmlayer.tif")
