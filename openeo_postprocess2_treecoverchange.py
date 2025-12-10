@@ -15,6 +15,7 @@ import subprocess
 ELEVATION_MAX = 1800
 ELEVATION_MIN = 40
 LARGE_SIEVE = 50000
+AI_DETECTION_THRESHOLD = 200
 
 forest_tifpath = Path("/mnt/hddarchive.nfs/amazonas_dir/work_dir/forest_elevation_mask/mask/forest_mask_2020.tif")
 elevation_tifpath = Path("/mnt/hddarchive.nfs/amazonas_dir/work_dir/srtmlayer.tif")
@@ -56,8 +57,8 @@ def find_cummulative_aidetection(ai_files_list):
         if not ai_files_list_item.exists(): continue
         print(f"ai detection {ai_files_list_item}")
         rasterarray = raster2array(ai_files_list_item)
-        rasterarray[rasterarray < 50] = 1
-        rasterarray[rasterarray >= 50] = 0
+        rasterarray[rasterarray < AI_DETECTION_THRESHOLD] = 1
+        rasterarray[rasterarray >= AI_DETECTION_THRESHOLD] = 0
         rasterarray_list.append(rasterarray)
     stack_array_sum = None
     if len(rasterarray_list) >0:
