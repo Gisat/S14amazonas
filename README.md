@@ -31,27 +31,27 @@ Dependencies
 Main Components
 -------------
 1. openEO Detection Workflows  
-   openeo_treecoverchange_detection.py
-   Core openEO process graph defining the tree cover change detection logic:
-      Loads Sentinel-1 backscatter data
-      Builds temporal stacks
-      Computes statistical features and apply change-detection rules
-      Applies AI model
-      Produces intermediate change layers
+   _openeo_treecoverchange_detection.py_  
+   Core openEO process graph defining the tree cover change detection logic:  
+      Loads Sentinel-1 backscatter data  
+      Builds temporal stacks  
+      Computes statistical features and apply change-detection rules  
+      Applies AI model  
+      Produces intermediate change layers  
 
-   openeo_jobmanager_detection.py
-   Handles:
+   _openeo_jobmanager_detection.py_  
+   Handles:  
       Batch job submission  
       Temporal and spatial parameterisation  
       Monitoring and management of long-running openEO jobs  
 
 2. Post-processing Steps  
-   openeo_postprocess1_arrange_treecover_change.py  
+   _openeo_postprocess1_arrange_treecover_change.py_  
       Organises raw openEO outputs  
       Applies spatial/temporal structuring  
       Prepares data for final thresholding and classification  
 
-   openeo_postprocess2_treecoverchange.py  
+   _openeo_postprocess2_treecoverchange.py_  
       Applies final thresholds, forest-non forest mask, elevation mask  
       Performs harmonization of statistics based and AI based change detection  
       Converts outputs into binary forest-loss maps  
