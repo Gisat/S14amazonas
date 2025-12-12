@@ -45,7 +45,14 @@ Main Components
       Temporal and spatial parameterisation  
       Monitoring and management of long-running openEO jobs  
 
-2. Post-processing Steps  
+2. UDF-Based Detection Modules  
+   _udf_mcd_deforestation_detection.py_  
+   Statistical descriptors and thresholding to identify change  
+
+   _udf_ai_deforestation_detection.py_  
+   AI-assisted change detection  
+
+3. Post-processing Steps  
    _openeo_postprocess1_arrange_treecover_change.py_  
       Organises raw openEO outputs  
       Applies spatial/temporal structuring  
