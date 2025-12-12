@@ -30,7 +30,7 @@ Dependencies
 
 Main Components
 -------------
-1. openEO Detection Workflows
+1. openEO Detection Workflows  
    openeo_treecoverchange_detection.py
    Core openEO process graph defining the tree cover change detection logic:
       Loads Sentinel-1 backscatter data
@@ -45,7 +45,7 @@ Main Components
       Temporal and spatial parameterisation  
       Monitoring and management of long-running openEO jobs  
 
-2. Post-processing Steps
+2. Post-processing Steps  
    openeo_postprocess1_arrange_treecover_change.py  
       Organises raw openEO outputs  
       Applies spatial/temporal structuring  
