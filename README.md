@@ -41,21 +41,21 @@ Main Components
 
    openeo_jobmanager_detection.py
    Handles:
-      Batch job submission
-      Temporal and spatial parameterisation
-      Monitoring and management of long-running openEO jobs
+      Batch job submission  
+      Temporal and spatial parameterisation  
+      Monitoring and management of long-running openEO jobs  
 
 2. Post-processing Steps
-   openeo_postprocess1_arrange_treecover_change.py
-      Organises raw openEO outputs
-      Applies spatial/temporal structuring
-      Prepares data for final thresholding and classification
+   openeo_postprocess1_arrange_treecover_change.py  
+      Organises raw openEO outputs  
+      Applies spatial/temporal structuring  
+      Prepares data for final thresholding and classification  
 
-   openeo_postprocess2_treecoverchange.py
-      Applies final thresholds, forest-non forest mask, elevation mask
-      Performs harmonization of statistics based and AI based change detection
-      Converts outputs into binary forest-loss maps
-      Produces analysis-ready GeoTIFF outputs
+   openeo_postprocess2_treecoverchange.py  
+      Applies final thresholds, forest-non forest mask, elevation mask  
+      Performs harmonization of statistics based and AI based change detection  
+      Converts outputs into binary forest-loss maps  
+      Produces analysis-ready GeoTIFF outputs  
 
 Produces analysis-ready GeoTIFF outputs
 Hints
