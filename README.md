@@ -28,7 +28,7 @@ Dependencies
    - `numpy`, `scipy`, `gdal`, `osgeo`, `ogr`, `osr`, `pandas`, `openeo`
 
 
-Main Components
+Documentation
 -------------
 1. openEO Detection Workflows  
    _openeo_treecoverchange_detection.py_  
@@ -64,7 +64,6 @@ Main Components
       Converts outputs into binary forest-loss maps  
       Produces analysis-ready GeoTIFF outputs  
 
-Produces analysis-ready GeoTIFF outputs
 Hints
 -----
 
