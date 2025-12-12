@@ -1,10 +1,14 @@
-# s14amazonas
+# S14 Amazonas – openEO Workflow
 ![alt text](https://raw.githubusercontent.com/gisat/s14amazonas/master/amazonas_workflow.jpg)
-Script repositorty for ESA s14amazonas project.
+Script repositorty for ESA S14amazonas project.
 
+This branch contains the openEO-based implementation of the Sentinel-1 forest cover change / deforestation detection workflow developed under the Sentinel-1 for Science Amazonas (S14 Amazonas) project.
+
+The focus of this branch is on scalable, reproducible execution of the algorithm using the openEO API, including post-processing, and threshold-based change detection.
 
 Overview
 --------
+The workflow detects tree cover change (forest → non-forest) using multi-temporal Sentinel-1 SAR backscatter. It is designed to operate on large spatial and temporal extents (Amazon basin scale) and to be deployable on openEO-compliant backends.
 
 1.  [Installation](#installation)
 2.  [Dependencies](#dependencies)
@@ -21,23 +25,28 @@ Dependencies
 -----------
 
    - Python version 3.7 or higher
-   - `numpy`, `scipy`, `gdal`, `osgeo`, `ogr`, `osr`, `pandas`
+   - `numpy`, `scipy`, `gdal`, `osgeo`, `ogr`, `osr`, `pandas`, `openeo`
 
 
-Documentation
+Main Components
 -------------
+1. openEO Detection Workflows
 
-The command to run each script is given in the header of the script. Download the supporting data needed for the scripts from the link (https://www.dropbox.com/sh/353unqp9a76xqts/AAB_Qa6DH7vpl41bJefn15eka?dl=0) and place it in a directory. 
-The supporting data is in the aux_data directory. The results of each script are stored in the output.
-The area of interest, for which the deforestation detection is needed, is given as a multipolygon/polygon string as one of the arguments for the scripts. For example, a Sentinel-2 tile extent(https://eatlas.org.au/data/uuid/f7468d15-12be-4e3f-a246-b2882a324f59), which is the area of interest, can be given as the input.
- 
-#### Mosaic
-Pre-processed backscatter scenes are grouped and mosaicked in 12-day intervals based on the observation date. Such mosaics are made for each polarization of data in each orbit direction (i.e. ascending and descending). The 12-day mosaics are alinged to each other, each containing the same number of pixel rows x columns. 
-#### StatCubes
-The above-generated mosaics are stacked and various calculations are done on a moving-window across the stack. For example, the difference in means in stacks of 10 past images and 10 future images are calculated, the R2 and p-value of the slope of a linear trend on the stack is calculated etc. These output rasters are referred to as ‘StatCubes’.
-#### Detection
-The above-generated  ‘StatCubes’ can then be  used in multiple ways (e.g. simple thresholding, decision-tree, random-forest or deep learning approaches) to detect deforestation events. Here, a simple-thresholding approach, with user-defined thresholds, is demonstrated.
+openeo_treecoverchange_detection.py
+Core openEO process graph defining the tree cover change detection logic:
+Loads Sentinel-1 backscatter data
+Builds temporal stacks
+Computes statistical features
+Applies change-detection rules
+Produces intermediate and final change layers
 
+openeo_jobmanager_detection.py
+Handles:
+Batch job submission
+Temporal and spatial parameterisation
+Monitoring and management of long-running openEO jobs
+
+2. 
 Hints
 -----
 
